@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-matrix:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.11', '3.12']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package and dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+      - name: Compile Python bytecode
+        run: python -m compileall src tests examples
+
+      - name: Run pytest suite
+        run: pytest -v
+
+      - name: Verify CLI subcommands
+        run: |
+          allele-weaver phase --gene CYP2D6 --diplotype "*1/*4"
+          allele-weaver call --gene CYP2D6 --diplotype "*10/*36"
+          allele-weaver dose --drug warfarin --activity-score 1.0 --optimize
+          allele-weaver popgen --gene CYP2C19 --n-samples 60
+          allele-weaver benchmark --trials 1
+          allele-weaver demo --gene CYP2C9 --diplotype "*1/*3" --drug warfarin --uq-draws 20
+
+      - name: Run standalone example workflows
+        run: |
+          python examples/01_cyp2d6_phasing_and_cnv.py
+          python examples/02_warfarin_pbpk_dose_optimization.py
+          python examples/03_population_ld_and_uq.py
+          python examples/04_cohort_benchmark_suite.py

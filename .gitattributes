@@ -1,0 +1,7 @@
+# Enforce consistent LF line endings and strict Linguist classification
+*.py text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.toml text eol=lf
+tests/fixtures/* linguist-detectable=false
+docs/* linguist-documentation
